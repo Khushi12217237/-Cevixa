@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>CardioVoice | Acoustic Analysis</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      background: #0f172a;
+      color: #f8fafc;
+      margin: 0;
+      padding: 40px 20px;
+      display: flex;
+      justify-content: center;
+    }
+    .container {
+      max-width: 640px;
+      width: 100%;
+      background: #1e293b;
+      padding: 32px;
+      border-radius: 16px;
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.4);
+    }
+    h1 { margin-top: 0; color: #38bdf8; font-size: 28px; }
+    p { color: #cbd5e1; line-height: 1.5; }
+    .upload-box {
+      border: 2px dashed #475569;
+      border-radius: 12px;
+      padding: 28px;
+      text-align: center;
+      margin: 24px 0;
+      background: #0f172a;
+    }
+    input[type="file"] { margin-bottom: 16px; color: #e2e8f0; }
+    button {
+      background: #38bdf8;
+      color: #0f172a;
+      border: none;
+      padding: 12px 24px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+    button:hover { background: #7dd3fc; }
+    button:disabled { background: #64748b; cursor: not-allowed; }
+    .grid {
+      display: grid;
+      grid-template-columns: repeat(2, 1fr);
+      gap: 16px;
+      margin-top: 24px;
+    }
+    .card {
+      background: #0f172a;
+      padding: 16px;
+      border-radius: 10px;
+      border: 1px solid #334155;
+    }
+    .label { font-size: 13px; color: #94a3b8; }
+    .value { font-size: 24px; font-weight: bold; color: #38bdf8; margin-top: 4px; }
+    .error { color: #f87171; margin-top: 16px; font-weight: 500; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>CardioVoice Analyzer</h1>
+    <p>Upload a sustained vowel <code>.wav</code> recording to extract pitch, jitter, shimmer, and harmonics-to-noise ratio (HNR).</p>
+
+    <div class="upload-box">
+      <input type="file" id="audioFile" accept=".wav,audio/wav" /><br />
+      <button id="analyzeBtn" onclick="uploadAudio()">Analyze Recording</button>
+    </div>
+
+    <div id="status" class="error"></div>
+
+    <div id="results" class="grid" style="display: none;">
+      <div class="card">
+        <div class="label">Median Pitch (F0)</div>
+        <div class="value" id="f0">--</div>
+      </div>
+      <div class="card">
+        <div class="label">Local Jitter</div>
+        <div class="value" id="jitter">--</div>
+      </div>
+      <div class="card">
+        <div class="label">Local Shimmer</div>
+        <div class="value" id="shimmer">--</div>
+      </div>
+      <div class="card">
+        <div class="label">Harmonics-to-Noise (HNR)</div>
+        <div class="value" id="hnr">--</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    async function uploadAudio() {
+      const fileInput = document.getElementById("audioFile");
+      const status = document.getElementById("status");
+      const results = document.getElementById("results");
+      const btn = document.getElementById("analyzeBtn");
+
+      if (!fileInput.files.length) {
+        status.textContent = "Please select a .wav audio file first.";
+        return;
+      }
+
+      const formData = new FormData();
+      formData.append("file", fileInput.files[0]);
+
+      status.textContent = "Analyzing audio...";
+      results.style.display = "none";
+      btn.disabled = true;
+
+      try {
+        const res = await fetch("/analyze", { method: "POST", body: formData });
+        const data = await res.json();
+
+        if (data.error) {
+          status.textContent = "Error: " + data.error;
+        } else {
+          status.textContent = "";
+          document.getElementById("f0").textContent = data.metrics.f0_median_hz + " Hz";
+          document.getElementById("jitter").textContent = data.metrics.jitter_local_pct + " %";
+          document.getElementById("shimmer").textContent = data.metrics.shimmer_local_pct + " %";
+          document.getElementById("hnr").textContent = data.metrics.hnr_db + " dB";
+          results.style.display = "grid";
+        }
+      } catch (err) {
+        status.textContent = "Failed to connect to the API.";
+      } finally {
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
