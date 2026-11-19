@@ -13,6 +13,7 @@ print('Parselmouth ready, version:', parselmouth.__version__)
 
 import os
 if not os.path.exists('audio'):
+    
     import zipfile
     print('Zip file upload : CardioVoice_Synthetic_Pipeline_v2.zip')
     up = files.upload()
@@ -20,8 +21,8 @@ if not os.path.exists('audio'):
         zipfile.ZipFile(name).extractall('.')
     if os.path.exists('pipe2'):
         os.chdir('pipe2')
-print('In this folder:', os.listdir('.')[:15])
-print('Audio files', sum(len(f) for _, _, f in os.walk('audio')))
+print('In ths folder:', os.listdir('.')[:15])
+print('Audio files:', sum(len(f) for _, _, f in os.walk('audio')))
 
 import parselmouth
 from parselmouth.praat import call
@@ -37,7 +38,7 @@ def voice_numbers(path, f0min=75, f0max=300):
     hnr = call(call(snd, 'To Harmonicity (cc)', 0.01, f0min, 0.1, 1.0), 'Get mean', 0, 0)
     return {'f0_median_hz': f0_median, 'jitter_local_pct': jitter, 'shimmer_local_pct': shimmer, 'hnr_db': hnr}
 
-# Test: DEMO_001 for 1 day
+# Test: DEMO_001 ke pehle din ki file
 print(voice_numbers('audio/DEMO_001/day01_aaa.wav'))
 
 import pandas as pd, numpy as np
@@ -209,6 +210,6 @@ def show_voice_baseline_vs_everyday(pid):
 show_voice_baseline_vs_everyday('DEMO_002')
 
 result.to_csv('result_parselmouth.csv', index=False)
-
+from google.colab import files
 files.download('result_parselmouth.csv')
 
